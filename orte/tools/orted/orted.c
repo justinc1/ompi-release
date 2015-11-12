@@ -22,6 +22,7 @@
 #include "orte_config.h"
 
 #include <stdlib.h>
+#include <string.h>
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
@@ -61,6 +62,25 @@ int main(int argc, char *argv[])
         if ((! (0 == mask && (EINVAL == errno || ERANGE == errno))) &&
             (*endptr == '\0')) {
             umask(mask);
+        }
+    }
+
+    // orte_hnp_uri, convert "+tcp" back to ";tcp"
+    int ii;
+    char *cur_arg, *cur_value, *pos;
+    for(ii=0; ii<argc-1; ii++) {
+        cur_arg = argv[ii];
+        printf("TTRT cur_arg %s\n", cur_arg);
+        if(0 == strcmp(cur_arg, "orte_hnp_uri")) {
+            printf("TTRT cur_arg is orte_hnp_uri\n");
+            cur_value = argv[ii+1];
+            printf("TTRT cur_value %s\n", cur_value);
+            pos = strstr(cur_value, "+tcp");
+            printf("TTRT pos %s\n", pos?pos: "NULL");
+            if(pos) {
+                pos[0] = ';';
+            }
+            printf("TTRT new_value %s\n", cur_value);
         }
     }
 
