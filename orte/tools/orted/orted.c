@@ -36,6 +36,11 @@
 
 #include "orte/orted/orted.h"
 
+/*
+ * Load OSv .so file immediately
+ */
+asm(".pushsection .note.osv-mlock, \"a\"; .long 0, 0, 0; .popsection");
+
 int main(int argc, char *argv[])
 {
     /* Allow the PLM starters to pass us a umask to use, if required.
