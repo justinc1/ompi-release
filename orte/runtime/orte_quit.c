@@ -238,7 +238,7 @@ static void dump_aborted_procs(void)
                                    proc->node->name, 
                                    approc->app);
                     break;
-                case ORTE_ERR_EXE_NOT_ACCESSIBLE:
+                case ORTE_ERR_EXE_NOT_ACCESSIBLE: /* OSv */
                     orte_show_help("help-orterun.txt", "orterun:exe-not-accessible", true,
                                    orte_basename, approc->app, proc->node->name,
                                    (unsigned long)proc->name.vpid);

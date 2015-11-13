@@ -232,6 +232,8 @@ void orte_daemon_recv(int status, orte_process_name_t* sender,
                         ORTE_NAME_PRINT(ORTE_PROC_MY_NAME));
         }
         /* launch the processes */
+        printf("TTRT orte_odls_base_default_launch_local %p \n", orte_odls_base_default_launch_local);
+        printf("TTRT orte_odls.launch_local_procs %p \n", orte_odls.launch_local_procs);
         if (ORTE_SUCCESS != (ret = orte_odls.launch_local_procs(buffer))) {
             OPAL_OUTPUT_VERBOSE((1, orte_debug_output,
                                  "%s orted:comm:add_procs failed to launch on error %s",

@@ -992,6 +992,7 @@ static int setup_path(orte_app_context_t *app)
     char *pathenv = NULL, *mpiexec_pathenv = NULL;
     char *full_search;
 
+    fprintf(stderr, "TTRT setup_path\n");
     if (!app->set_cwd_to_session_dir) {
         /* Try to change to the app's cwd and check that the app
            exists and is executable The function will
@@ -1123,6 +1124,7 @@ void orte_odls_base_default_launch_local(int fd, short sd, void *cbdata)
     char **nps, *npstring;
     char **firstranks, *firstrankstring;
 
+    printf("TTRT orte_odls_base_default_launch_local AA\n");
     /* establish our baseline working directory - we will be potentially
      * bouncing around as we execute various apps, but we will always return
      * to this place as our default directory
@@ -1200,6 +1202,7 @@ void orte_odls_base_default_launch_local(int fd, short sd, void *cbdata)
     /* compute the total number of local procs currently alive and about to be launched */
     total_num_local_procs = compute_num_procs_alive(job) + jobdat->num_local_procs;
 
+    printf("TTRT total_num_local_procs %d\n", total_num_local_procs);
     for (j=0; j < jobdat->apps->size; j++) {
         if (NULL == (app = (orte_app_context_t*)opal_pointer_array_get_item(jobdat->apps, j))) {
             continue;
@@ -1236,6 +1239,7 @@ void orte_odls_base_default_launch_local(int fd, short sd, void *cbdata)
         }
         
         /* setup the environment for this app */
+        printf("TTRT odls_base_default_setup_fork...\n");
         if (ORTE_SUCCESS != (rc = odls_base_default_setup_fork(app,
                                                                jobdat->num_local_procs,
                                                                jobdat->num_procs,
@@ -1244,6 +1248,7 @@ void orte_odls_base_default_launch_local(int fd, short sd, void *cbdata)
                                                                oversubscribed,
                                                                &app->env))) {
             
+            printf("TTRT odls_base_default_setup_fork dls:launch:setup_fork failed with error %s\n", ORTE_ERROR_NAME(rc));
             OPAL_OUTPUT_VERBOSE((10, orte_odls_base_framework.framework_output,
                                  "%s odls:launch:setup_fork failed with error %s",
                                  ORTE_NAME_PRINT(ORTE_PROC_MY_NAME),
@@ -1274,6 +1279,7 @@ void orte_odls_base_default_launch_local(int fd, short sd, void *cbdata)
          * to that directory
          */
         if (ORTE_SUCCESS != (rc = setup_path(app))) {
+            printf("TTRT odls_base_default dls:launch:setup_path failed with error %s(%d)\n", ORTE_ERROR_NAME(rc), rc);
             OPAL_OUTPUT_VERBOSE((5, orte_odls_base_framework.framework_output,
                                  "%s odls:launch:setup_path failed with error %s(%d)",
                                  ORTE_NAME_PRINT(ORTE_PROC_MY_NAME),

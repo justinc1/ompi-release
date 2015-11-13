@@ -125,6 +125,8 @@ int orte_util_check_context_app(orte_app_context_t *context, char **env)
         bproc, for example, does not use the fork pls for launching, so
         it does this same work over there. */
     
+    fprintf(stdout, "TTRT stdout orte_util_check_context_app argv[0]=%s app=%s\n", context->argv[0], context->app);
+    fprintf(stderr, "TTRT stderr orte_util_check_context_app argv[0]=%s app=%s\n", context->argv[0], context->app);
     tmp = opal_basename(context->argv[0]);
     if (strlen(tmp) == strlen(context->argv[0])) {
         /* If this is a naked executable -- no relative or absolute
@@ -138,7 +140,8 @@ int orte_util_check_context_app(orte_app_context_t *context, char **env)
         context->app = tmp;
     } else {
         if (0 != access(context->app, X_OK)) {
-            return ORTE_ERR_EXE_NOT_ACCESSIBLE;
+            // return ORTE_SUCCESS;
+            return ORTE_ERR_EXE_NOT_ACCESSIBLE; /* OSv */
         }
     }
     
