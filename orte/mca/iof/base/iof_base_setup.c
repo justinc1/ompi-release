@@ -122,7 +122,13 @@ orte_iof_base_setup_child(orte_iof_base_io_conf_t *opts, char ***env)
 {
     int ret;
     char *str;
+    fprintf(stderr, "TTRT orte_iof_base_setup_child \n");
+    if(orte_is_osv()) {
+        fprintf(stderr, "TTRT orte_iof_base_setup_child OSv no-op \n");
+        return ORTE_SUCCESS;
+    }
 
+    /* TODO check OSv */
     close(opts->p_stdin[1]);
     close(opts->p_stdout[0]);
     close(opts->p_stderr[0]);
@@ -149,19 +155,19 @@ orte_iof_base_setup_child(orte_iof_base_io_conf_t *opts, char ***env)
         }
         ret = dup2(opts->p_stdout[1], fileno(stdout));
         if (ret < 0) return ORTE_ERR_PIPE_SETUP_FAILURE;
-        close(opts->p_stdout[1]);
+        close(opts->p_stdout[1]); /* TODO check OSv */
     } else {
         if(opts->p_stdout[1] != fileno(stdout)) {
             ret = dup2(opts->p_stdout[1], fileno(stdout));
             if (ret < 0) return ORTE_ERR_PIPE_SETUP_FAILURE;
-            close(opts->p_stdout[1]); 
+            close(opts->p_stdout[1]); /* TODO check OSv */
         }
     }
     if (opts->connect_stdin) {
         if(opts->p_stdin[0] != fileno(stdin)) {
             ret = dup2(opts->p_stdin[0], fileno(stdin));
             if (ret < 0) return ORTE_ERR_PIPE_SETUP_FAILURE;
-            close(opts->p_stdin[0]); 
+            close(opts->p_stdin[0]); /* TODO check OSv */
         }
     } else {
         int fd;
@@ -200,6 +206,11 @@ orte_iof_base_setup_parent(const orte_process_name_t* name,
 {
     int ret;
 
+    fprintf(stderr, "TTRT orte_iof_base_setup_parent \n");
+    /*if(orte_is_osv()) {
+        fprintf(stderr, "TTRT orte_iof_base_setup_parent OSv no-op \n");
+        return ORTE_SUCCESS;
+    }*/
     close(opts->p_stdin[0]);
     close(opts->p_stdout[1]);
     close(opts->p_stderr[1]);
@@ -214,7 +225,9 @@ orte_iof_base_setup_parent(const orte_process_name_t* name,
             return ret;
         }
     } else {
-        close(opts->p_stdin[1]);
+        if(!orte_is_osv()) {
+            close(opts->p_stdin[1]);
+        }
     }
 
     /* connect read ends to IOF */

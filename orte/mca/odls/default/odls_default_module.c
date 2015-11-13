@@ -67,6 +67,7 @@
 #include "orte_config.h"
 #include "orte/constants.h"
 #include "orte/types.h"
+#include "orte/runtime/orte_osv_support.h"
 
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -446,7 +447,9 @@ static int do_child(orte_app_context_t* context,
         /* Set a new process group for this child, so that a
            SIGSTOP can be sent to it without being sent to the
            orted. */
-        setpgid(0, 0);
+        if(!orte_is_osv()) {
+            setpgid(0, 0);
+        }
     }
     
     /* Setup the pipe to be close-on-exec */
@@ -680,11 +683,13 @@ static int do_child(orte_app_context_t* context,
     /* close all open file descriptors w/ exception of stdin/stdout/stderr,
        the pipe used for the IOF INTERNAL messages, and the pipe up to
        the parent. */
-    if (ORTE_SUCCESS != close_open_file_descriptors(write_fd, opts)) {
-        // close *all* file descriptors -- slow
-        for(fd=3; fd<fdmax; fd++) {
-            if (fd != opts.p_internal[1] && fd != write_fd) {
-                close(fd);
+    if(!orte_is_osv()) {
+        if (ORTE_SUCCESS != close_open_file_descriptors(write_fd, opts)) {
+            // close *all* file descriptors -- slow
+            for(fd=3; fd<fdmax; fd++) {
+                if (fd != opts.p_internal[1] && fd != write_fd) {
+                    close(fd);
+                }
             }
         }
     }
@@ -728,11 +733,21 @@ static int do_child(orte_app_context_t* context,
         }
     }
     
-    execve(context->app, context->argv, environ_copy);
-    send_error_show_help(write_fd, 1, 
-                         "help-orte-odls-default.txt", "execve error",
-                         orte_process_info.nodename, context->app, strerror(errno));
-    /* Does not return */
+    if(orte_is_osv()) {
+        int ret;
+        ret  = execve(context->app, context->argv, environ_copy);
+        printf("TTRT OSv execve ret = %d", ret);
+        close(write_fd);
+        // Does return in OSv
+    }
+    else {
+        execve(context->app, context->argv, environ_copy);
+        send_error_show_help(write_fd, 1, 
+                             "help-orte-odls-default.txt", "execve error",
+                             orte_process_info.nodename, context->app, strerror(errno));
+        /* Does not return */
+    }
+    // Does return in OSv
 }
 
 
@@ -919,7 +934,13 @@ static int odls_default_fork_local_proc(orte_app_context_t* context,
     }
     
     /* Fork off the child */
-    pid = fork();
+    if (orte_is_osv()) {
+        /* positive value to indicate that we are parent */
+        pid = 111;
+    }
+    else {
+        pid = fork();
+    }
     if (NULL != child) {
         child->pid = pid;
     }
@@ -934,6 +955,7 @@ static int odls_default_fork_local_proc(orte_app_context_t* context,
     }
     
     if (pid == 0) {
+        /* we are child, not on OSv */
 	close(p[0]);
 #if HAVE_SETPGID
         setpgid(0, 0);
@@ -941,8 +963,15 @@ static int odls_default_fork_local_proc(orte_app_context_t* context,
         do_child(context, child, environ_copy, jobdat, p[1], opts);
         /* Does not return */
     } 
+    if (orte_is_osv()) {
+        /* we are parent, on OSv - run child now */
+        do_child(context, child, environ_copy, jobdat, p[1], opts);
+        /* Does return */
+    }
 
-    close(p[1]);
+    if (!orte_is_osv()) {
+        close(p[1]);
+    }
     return do_parent(context, child, environ_copy, jobdat, p[0], opts);
 }
 

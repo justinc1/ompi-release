@@ -16,7 +16,7 @@
  * Copyright (c) 2011-2013 Cisco Systems, Inc.  All rights reserved.
  * Copyright (c) 2013-2014 Intel, Inc.  All rights reserved.
  * $COPYRIGHT$
- * 
+ *
  * Additional copyrights may follow
  * 
  * $HEADER$
@@ -26,6 +26,7 @@
 #include "orte_config.h"
 #include "orte/constants.h"
 #include "orte/types.h"
+#include "orte/runtime/orte_osv_support.h"
 
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
