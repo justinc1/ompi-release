@@ -305,7 +305,28 @@ static int mca_btl_vader_component_close(void)
     OBJ_DESTRUCT(&mca_btl_vader_component.pending_fragments);
 
     if (NULL != mca_btl_vader_component.my_segment) {
-        munmap (mca_btl_vader_component.my_segment, mca_btl_vader_component.segment_size);
+        if (MCA_BTL_VADER_XPMEM != mca_btl_vader_component.single_copy_mechanism) {
+            /* Segment was allocated and attached via opal_shmem_segment_create 
+             * and opal_shmem_segment_attach. Do not call munmap directly, use 
+             * opal_shmem_segment_dettach, opal_shmem_unlink.
+             * 
+             * The shmem_mmap module cleanup might already dettach that segment.
+             * So check first if it is still valid. Otherwise unlink will fail -
+             * filename is "", and errno says something like "directory cannot be...".
+             */
+            BTL_VERBOSE(("VADER opal_shmem_segment_detach seg_ds=%p id=%d addr=%p \n", 
+                &mca_btl_vader_component.seg_ds, 
+                mca_btl_vader_component.seg_ds.seg_id, 
+                mca_btl_vader_component.my_segment
+            ));
+            if (OPAL_SHMEM_DS_ID_INVALID != mca_btl_vader_component.seg_ds.seg_id) {
+                opal_shmem_segment_detach(&mca_btl_vader_component.seg_ds);
+                opal_shmem_unlink(&mca_btl_vader_component.seg_ds); // might still fail, but only once??
+            }
+        }
+        else {
+            munmap (mca_btl_vader_component.my_segment, mca_btl_vader_component.segment_size);
+        }
     }
 
 #if OMPI_BTL_VADER_HAVE_KNEM
