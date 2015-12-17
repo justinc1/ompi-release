@@ -34,8 +34,7 @@ headers += \
 	runtime/orte_wait.h \
         runtime/orte_cr.h \
         runtime/orte_data_server.h \
-        runtime/orte_info_support.h \
-        runtime/orte_osv_support.h
+        runtime/orte_info_support.h
 
 libopen_rte_la_SOURCES += \
         runtime/orte_finalize.c \
@@ -52,5 +51,4 @@ libopen_rte_la_SOURCES += \
         runtime/orte_wait.c \
         runtime/orte_cr.c \
         runtime/orte_data_server.c \
-        runtime/orte_info_support.c \
-        runtime/orte_osv_support.c
+        runtime/orte_info_support.c

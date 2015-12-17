@@ -67,7 +67,7 @@
 #include "orte_config.h"
 #include "orte/constants.h"
 #include "orte/types.h"
-#include "orte/runtime/orte_osv_support.h"
+#include "opal/runtime/opal_osv_support.h"
 
 #ifdef HAVE_STRING_H
 #include <string.h>
@@ -447,7 +447,7 @@ static int do_child(orte_app_context_t* context,
         /* Set a new process group for this child, so that a
            SIGSTOP can be sent to it without being sent to the
            orted. */
-        if(!orte_is_osv()) {
+        if(!opal_is_osv()) {
             setpgid(0, 0);
         }
     }
@@ -683,7 +683,7 @@ static int do_child(orte_app_context_t* context,
     /* close all open file descriptors w/ exception of stdin/stdout/stderr,
        the pipe used for the IOF INTERNAL messages, and the pipe up to
        the parent. */
-    if(!orte_is_osv()) {
+    if(!opal_is_osv()) {
         if (ORTE_SUCCESS != close_open_file_descriptors(write_fd, opts)) {
             // close *all* file descriptors -- slow
             for(fd=3; fd<fdmax; fd++) {
@@ -733,7 +733,7 @@ static int do_child(orte_app_context_t* context,
         }
     }
     
-    if(orte_is_osv()) {
+    if(opal_is_osv()) {
         int ret;
         ret  = execve(context->app, context->argv, environ_copy);
         printf("TTRT OSv execve ret = %d", ret);
@@ -934,7 +934,7 @@ static int odls_default_fork_local_proc(orte_app_context_t* context,
     }
     
     /* Fork off the child */
-    if (orte_is_osv()) {
+    if (opal_is_osv()) {
         /* positive value to indicate that we are parent */
         pid = 111;
     }
@@ -963,13 +963,13 @@ static int odls_default_fork_local_proc(orte_app_context_t* context,
         do_child(context, child, environ_copy, jobdat, p[1], opts);
         /* Does not return */
     } 
-    if (orte_is_osv()) {
+    if (opal_is_osv()) {
         /* we are parent, on OSv - run child now */
         do_child(context, child, environ_copy, jobdat, p[1], opts);
         /* Does return */
     }
 
-    if (!orte_is_osv()) {
+    if (!opal_is_osv()) {
         close(p[1]);
     }
     return do_parent(context, child, environ_copy, jobdat, p[0], opts);

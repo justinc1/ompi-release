@@ -41,4 +41,5 @@ libopen_pal_la_SOURCES += \
         runtime/opal_init.c \
         runtime/opal_params.c \
         runtime/opal_cr.c \
-        runtime/opal_info_support.c
+        runtime/opal_info_support.c \
+        runtime/opal_osv_support.c

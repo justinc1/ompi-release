@@ -5,7 +5,7 @@
 /* 
  * Return 1 if inside OSv, 0 otherwise.
  * */
-int orte_is_osv() {
+int opal_is_osv() {
     char *osv_ver;
     osv_ver = getenv("OSV_VERSION");
     return osv_ver != NULL;

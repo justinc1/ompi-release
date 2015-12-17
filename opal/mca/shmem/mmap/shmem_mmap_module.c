@@ -59,7 +59,7 @@
 #include "opal/mca/shmem/shmem.h"
 #include "opal/mca/shmem/base/base.h"
 
-#include "orte/runtime/orte_osv_support.h"
+#include "opal/runtime/opal_osv_support.h"
 
 #include "shmem_mmap.h"
 
@@ -430,7 +430,7 @@ segment_attach(opal_shmem_ds_t *ds_buf)
 {
     pid_t my_pid = opal_shmem_getpid();
 
-    bool is_osv = orte_is_osv();
+    bool is_osv = opal_is_osv();
     if (my_pid != ds_buf->seg_cpid && 
         is_osv == false ) {
         /* On linux - call open + mmap if we are not creator.
@@ -514,7 +514,7 @@ segment_detach(opal_shmem_ds_t *ds_buf)
     );
 
     pid_t my_pid = opal_shmem_getpid();
-    bool is_osv = orte_is_osv();
+    bool is_osv = opal_is_osv();
     if (is_osv == false || 
         my_pid == ds_buf->seg_cpid) {
         /*

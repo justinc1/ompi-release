@@ -58,6 +58,7 @@
 #include "opal/util/opal_pty.h"
 #include "opal/util/opal_environ.h"
 #include "opal/util/output.h"
+#include "opal/runtime/opal_osv_support.h"
 
 #include "orte/mca/errmgr/errmgr.h"
 #include "orte/util/name_fns.h"
@@ -123,7 +124,7 @@ orte_iof_base_setup_child(orte_iof_base_io_conf_t *opts, char ***env)
     int ret;
     char *str;
     fprintf(stderr, "TTRT orte_iof_base_setup_child \n");
-    if(orte_is_osv()) {
+    if(opal_is_osv()) {
         fprintf(stderr, "TTRT orte_iof_base_setup_child OSv no-op \n");
         return ORTE_SUCCESS;
     }
@@ -207,7 +208,7 @@ orte_iof_base_setup_parent(const orte_process_name_t* name,
     int ret;
 
     fprintf(stderr, "TTRT orte_iof_base_setup_parent \n");
-    /*if(orte_is_osv()) {
+    /*if(opal_is_osv()) {
         fprintf(stderr, "TTRT orte_iof_base_setup_parent OSv no-op \n");
         return ORTE_SUCCESS;
     }*/
@@ -225,7 +226,7 @@ orte_iof_base_setup_parent(const orte_process_name_t* name,
             return ret;
         }
     } else {
-        if(!orte_is_osv()) {
+        if(!opal_is_osv()) {
             close(opts->p_stdin[1]);
         }
     }
