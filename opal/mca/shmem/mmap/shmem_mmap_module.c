@@ -49,6 +49,7 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H */
+#include <sys/syscall.h>
 
 #include "opal/constants.h"
 #include "opal/util/alfg.h"
@@ -57,6 +58,8 @@
 #include "opal/util/show_help.h"
 #include "opal/mca/shmem/shmem.h"
 #include "opal/mca/shmem/base/base.h"
+
+#include "orte/runtime/orte_osv_support.h"
 
 #include "shmem_mmap.h"
 
@@ -107,6 +110,15 @@ opal_shmem_mmap_module_t opal_shmem_mmap_module = {
 /* ////////////////////////////////////////////////////////////////////////// */
 /* private utility functions */
 /* ////////////////////////////////////////////////////////////////////////// */
+/**
+ * In OSv, return thread ID instead of process ID.
+ */
+pid_t opal_shmem_getpid()
+{
+    pid_t id;
+    id = syscall(__NR_gettid);
+    return id;
+}
 
 /* ////////////////////////////////////////////////////////////////////////// */
 /**
@@ -124,6 +136,7 @@ shmem_ds_reset(opal_shmem_ds_t *ds_buf)
          ds_buf->seg_id, (unsigned long)ds_buf->seg_size, ds_buf->seg_name)
     );
 
+    /* seg_cpid 0 is reserved value, but in OSv, 0 is also the only PID */
     ds_buf->seg_cpid = 0;
     OPAL_SHMEM_DS_RESET_FLAGS(ds_buf);
     ds_buf->seg_id = OPAL_SHMEM_DS_ID_INVALID;
@@ -224,7 +237,7 @@ get_uniq_file_name(const char *base_path, const char *hash_key)
         return NULL;
     }
 
-    my_pid = getpid();
+    my_pid = opal_shmem_getpid();
     opal_srand(&rand_buff,((uint32_t)(time(NULL) + my_pid)));
     rand_num = opal_rand(&rand_buff) % 1024;
     str_hash = sdbm_hash((unsigned char *)hash_key);
@@ -243,7 +256,7 @@ segment_create(opal_shmem_ds_t *ds_buf,
 {
     int rc = OPAL_SUCCESS;
     char *real_file_name = NULL;
-    pid_t my_pid = getpid();
+    pid_t my_pid = opal_shmem_getpid();
     /* the real size of the shared memory segment.  this includes enough space
      * to store our segment header.
      */
@@ -415,9 +428,21 @@ out:
 static void *
 segment_attach(opal_shmem_ds_t *ds_buf)
 {
-    pid_t my_pid = getpid();
+    pid_t my_pid = opal_shmem_getpid();
 
-    if (my_pid != ds_buf->seg_cpid) {
+    bool is_osv = orte_is_osv();
+    if (my_pid != ds_buf->seg_cpid && 
+        is_osv == false ) {
+        /* On linux - call open + mmap if we are not creator.
+         * 
+         * On OSv - additional mmap is not needed. But I'm not sure, why it 
+         * doesn't work if the not-creator thread calls mmap. Each thread would 
+         * access same file, only using different address. Nothing special. 
+         * But MPI_init than never finishes.
+         * 
+         * Maybe it has to do something with the rest of vader code - memcpy,
+         * memmove, different address, but actually same memory.
+         */
         if (-1 == (ds_buf->seg_id = open(ds_buf->seg_name, O_RDWR))) {
             int err = errno;
             char hn[MAXHOSTNAMELEN];
@@ -488,15 +513,42 @@ segment_detach(opal_shmem_ds_t *ds_buf)
          ds_buf->seg_id, (unsigned long)ds_buf->seg_size, ds_buf->seg_name)
     );
 
-    if (0 != munmap((void *)ds_buf->seg_base_addr, ds_buf->seg_size)) {
-        int err = errno;
-        char hn[MAXHOSTNAMELEN];
-        gethostname(hn, MAXHOSTNAMELEN - 1);
-        hn[MAXHOSTNAMELEN - 1] = '\0';
-        opal_show_help("help-opal-shmem-mmap.txt", "sys call fail", 1, hn,
-                       "munmap(2)", "", strerror(err), err);
-        rc = OPAL_ERROR;
+    pid_t my_pid = opal_shmem_getpid();
+    bool is_osv = orte_is_osv();
+    if (is_osv == false || 
+        my_pid == ds_buf->seg_cpid) {
+        /*
+         * On linux - always call munmap.
+         * 
+         * On OSv - only the creator will destroy allocated memory (it is considered 
+         * "owner"). But is it possible that other threads are still using the same
+         * address? Eg thread th-1 creates segment, it is used in th-1 and th-2. 
+         * th-1 finnishes processing, starts closing/detaching. th-2 might still 
+         * need to do some work - say collect data from othre nodes, possibly 
+         * from th-1 too.
+         */
+        if (0 != munmap((void *)ds_buf->seg_base_addr, ds_buf->seg_size)) {
+            int err = errno;
+            char hn[MAXHOSTNAMELEN];
+            gethostname(hn, MAXHOSTNAMELEN - 1);
+            hn[MAXHOSTNAMELEN - 1] = '\0';
+            opal_show_help("help-opal-shmem-mmap.txt", "sys call fail", 1, hn,
+                           "munmap(2)", "", strerror(err), err);
+            rc = OPAL_ERROR;
+        }
     }
+    else {
+        OPAL_OUTPUT_VERBOSE(
+            (70*0, opal_shmem_base_framework.framework_output,
+             "%s: %s: detaching SKIP (my_pid!=cpid) "
+             "ds_buf=%p base_addr=%p (id: %d, size: %lu, name: %s)\n",
+             mca_shmem_mmap_component.super.base_version.mca_type_name,
+             mca_shmem_mmap_component.super.base_version.mca_component_name,
+             ds_buf, ds_buf->seg_base_addr,
+             ds_buf->seg_id, (unsigned long)ds_buf->seg_size, ds_buf->seg_name)
+        );
+    }
+
     /* reset the contents of the opal_shmem_ds_t associated with this
      * shared memory segment.
      */
