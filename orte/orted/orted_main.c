@@ -31,6 +31,7 @@
 #endif
 
 #include <stdio.h>
+#include <sys/eventfd.h>
 #include <ctype.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -64,6 +65,7 @@
 #include "opal/util/daemon_init.h"
 #include "opal/dss/dss.h"
 #include "opal/mca/hwloc/hwloc.h"
+#include "opal/runtime/opal_osv_support.h"
 
 #include "orte/util/show_help.h"
 #include "orte/util/proc_info.h"
@@ -105,6 +107,10 @@
 static opal_event_t *pipe_handler;
 static void shutdown_callback(int fd, short flags, void *arg);
 static void pipe_closed(int fd, short flags, void *arg);
+
+static opal_event_t *osv_child_handler;
+static void osv_child_terminated (int fd, short flags, void *arg);
+int osv_child_done_fd;
 
 static char *orte_parent_uri;
 
@@ -247,6 +253,7 @@ int orte_daemon(int argc, char *argv[])
     memset(&orted_globals, 0, sizeof(orted_globals));
     /* initialize the singleton died pipe to an illegal value so we can detect it was set */
     orted_globals.singleton_died_pipe = -1;
+    osv_child_done_fd = -1;
     /* init the failure orted vpid to an invalid value */
     orted_globals.fail = ORTE_VPID_INVALID;
     
@@ -883,8 +890,29 @@ int orte_daemon(int argc, char *argv[])
     }
     ret = ORTE_SUCCESS;
 
+    /* OSv notification about thread termination */
+    if(osv_child_done_fd == -1) {
+        osv_child_done_fd = eventfd(0, 0); // EFD_NONBLOCK
+        fprintf(stderr, "orted_main.c:%d osv_child_done_fd=%d\n", __LINE__, osv_child_done_fd);
+    }
+    osv_child_handler = (opal_event_t*)malloc(sizeof(opal_event_t));
+    opal_event_set(orte_event_base, osv_child_handler,
+                   osv_child_done_fd,
+                   EV_READ | EV_PERSIST,
+                   osv_child_terminated,
+                   osv_child_handler);
+    opal_event_add(osv_child_handler, NULL);
+
     /* loop the event lib until an exit event is detected */
     while (orte_event_base_active) {
+        /* On Linux, on child process termination, event is triggered / SIGCHLD is sent.
+         * Callback odls_base_default_wait_local_proc is registered in orte_wait_cb.
+         * Then orte_wait_signal_callback (registered in orte_wait_init) does do_waitall,
+         * to check which child died.
+         * 
+         * On OSv, we lack signals. Instead, notification is sent by writing to 
+         * osv_child_done_fd. That triggers osv_child_handler, which calls do_waitall().
+         */
         opal_event_loop(orte_event_base, OPAL_EVLOOP_ONCE);
     }
 
@@ -902,6 +930,17 @@ int orte_daemon(int argc, char *argv[])
         fprintf(stderr, "exiting with status %d\n", orte_exit_status);
     }
     exit(orte_exit_status);
+}
+
+void do_waitall(int options); /* internal static function in orte_wait.c */
+static void osv_child_terminated (int fd, short flags, void *arg)
+{
+    opal_event_t *ev = (opal_event_t*)arg;
+
+    // free only if that would be the very lest child thread, just before orted termination.
+    // opal_event_free(ev);
+    //fprintf(stderr, "osv_child_terminated:%d called\n", __LINE__);
+    do_waitall(0);
 }
 
 static void pipe_closed(int fd, short flags, void *arg)

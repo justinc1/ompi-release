@@ -57,6 +57,7 @@
 #include "opal/threads/mutex.h"
 #include "opal/threads/condition.h"
 #include "opal/sys/atomic.h"
+#include "opal/runtime/opal_osv_support.h"
 
 #include "orte/constants.h"
 #include "orte/mca/errmgr/errmgr.h"
@@ -187,7 +188,7 @@ static opal_event_t handler;
 static void blk_waitpid_cb(pid_t wpid, int status, void *data);
 static pending_pids_item_t* find_pending_pid(pid_t pid, bool create);
 static registered_cb_item_t* find_waiting_cb(pid_t pid, bool create);
-static void do_waitall(int options);
+/* static */ void do_waitall(int options);
 static void trigger_callback(registered_cb_item_t *cb, 
                              pending_pids_item_t *pending);
 static int register_callback(pid_t pid, orte_wait_fn_t callback,
@@ -529,13 +530,19 @@ find_waiting_cb(pid_t pid, bool create)
 }
 
 
-static void
+/* static */ void
 do_waitall(int options)
 {
     if (!cb_enabled) return;
     while (1) {
         int status;
-        pid_t ret = waitpid(-1, &status, WNOHANG);
+        pid_t ret;
+        if(!opal_is_osv()) {
+            ret = waitpid(-1, &status, WNOHANG);
+        }
+        else {
+            ret = osv_waittid(-1, &status, WNOHANG);
+        }
         pending_pids_item_t *pending;
         registered_cb_item_t *cb;
 

@@ -165,6 +165,8 @@ static int orte_odls_default_kill_local_procs(opal_pointer_array_t *procs);
 static int orte_odls_default_signal_local_procs(const orte_process_name_t *proc, int32_t signal);
 static int orte_odls_default_restart_proc(orte_proc_t *child);
 
+extern int osv_child_done_fd;
+
 /*
  * Explicitly declared functions so that we can get the noreturn
  * attribute registered with the compiler.
@@ -729,14 +731,23 @@ static int do_child(orte_app_context_t* context,
             opal_output(0, "%s\tARGV[%d]: %s", ORTE_NAME_PRINT(ORTE_PROC_MY_NAME), jout, context->argv[jout]);
         }
         for (jout=0; NULL != environ_copy[jout]; jout++) {
-            opal_output(0, "%s\tENVIRON[%d]: %s", ORTE_NAME_PRINT(ORTE_PROC_MY_NAME), jout, environ_copy[jout]);
+            //opal_output(0, "%s\tENVIRON[%d]: %s", ORTE_NAME_PRINT(ORTE_PROC_MY_NAME), jout, environ_copy[jout]);
         }
     }
     
     if(opal_is_osv()) {
         int ret;
-        ret  = execve(context->app, context->argv, environ_copy);
-        printf("TTRT OSv execve ret = %d", ret);
+        long thread_id = 0;
+        ret  = osv_execve(context->app, context->argv, environ_copy, &thread_id, osv_child_done_fd);
+        fprintf(stderr, "TTRT odls_default_module.c:%d osv_execve ret=%d, thread_id=%ld, child=%p fd=%d \n", __LINE__, ret, thread_id, child, osv_child_done_fd);
+        if(ret != 0) {
+            send_error_show_help(write_fd, 1, 
+                                 "help-orte-odls-default.txt", "execve error",
+                                 orte_process_info.nodename, context->app, strerror(errno));
+        }
+        if (NULL != child) {
+            child->pid = (int)thread_id;
+        }
         close(write_fd);
         // Does return in OSv
     }
@@ -965,6 +976,7 @@ static int odls_default_fork_local_proc(orte_app_context_t* context,
     } 
     if (opal_is_osv()) {
         /* we are parent, on OSv - run child now */
+        /* do_child will store child thread TID into child->pid */
         do_child(context, child, environ_copy, jobdat, p[1], opts);
         /* Does return */
     }

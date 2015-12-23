@@ -556,12 +556,12 @@ int orte_dt_print_app_context(char **output, char *prefix, orte_app_context_t *s
         tmp = tmp2;
     }
     
-    count = opal_argv_count(src->env);
+    /* count = opal_argv_count(src->env);
     for (i=0; i < count; i++) {
         asprintf(&tmp2, "%s\n%s\tEnv[%lu]: %s", tmp, pfx2, (unsigned long)i, src->env[i]);
         free(tmp);
         tmp = tmp2;
-    }
+    } */
     
     asprintf(&tmp2, "%s\n%s\tWorking dir: %s (user: %d session-dir: %d)\n%s\tPrefix: %s\n%s\tHostfile: %s\tAdd-Hostfile: %s", tmp,
              pfx2, (NULL == src->cwd) ? "NULL" : src->cwd, (int) src->user_specified_cwd, (int) src->set_cwd_to_session_dir,
