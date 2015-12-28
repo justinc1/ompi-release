@@ -41,6 +41,7 @@
 #include "opal/util/output.h"
 #include "opal/threads/mutex.h"
 #include "opal/constants.h"
+#include "opal/runtime/opal_osv_support.h"
 
 /*
  * Private data
@@ -184,7 +185,7 @@ bool opal_output_init(void)
     }
     gethostname(hostname, sizeof(hostname));
     hostname[sizeof(hostname)-1] = '\0';
-    asprintf(&verbose.lds_prefix, "[%s:%05d] ", hostname, getpid());
+    asprintf(&verbose.lds_prefix, "[%s:%05d] ", hostname, opal_getpid());
 
     for (i = 0; i < OPAL_OUTPUT_MAX_STREAMS; ++i) {
         info[i].ldi_used = false;
@@ -205,7 +206,7 @@ bool opal_output_init(void)
 
     /* Set some defaults */
 
-    asprintf(&output_prefix, "output-pid%d-", getpid());
+    asprintf(&output_prefix, "output-pid%d-", opal_getpid());
     output_dir = strdup(opal_tmp_directory());
 
     /* Open the default verbose stream */
@@ -274,7 +275,7 @@ void opal_output_reopen_all(void)
         free(verbose.lds_prefix);
         verbose.lds_prefix = NULL;
     }
-    asprintf(&verbose.lds_prefix, "[%s:%05d] ", hostname, getpid());
+    asprintf(&verbose.lds_prefix, "[%s:%05d] ", hostname, opal_getpid());
 #if 0
     int i;
     opal_output_stream_t lds;
