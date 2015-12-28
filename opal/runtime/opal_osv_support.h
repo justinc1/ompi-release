@@ -13,6 +13,7 @@ long osv_execve(const char *path, char *const argv[], char *const envp[], long *
 BEGIN_C_DECLS
 
 OPAL_DECLSPEC int opal_is_osv();
+OPAL_DECLSPEC pid_t opal_getpid();
 
 END_C_DECLS
 

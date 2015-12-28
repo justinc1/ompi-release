@@ -49,7 +49,6 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H */
-#include <sys/syscall.h>
 
 #include "opal/constants.h"
 #include "opal/util/alfg.h"
@@ -110,15 +109,6 @@ opal_shmem_mmap_module_t opal_shmem_mmap_module = {
 /* ////////////////////////////////////////////////////////////////////////// */
 /* private utility functions */
 /* ////////////////////////////////////////////////////////////////////////// */
-/**
- * In OSv, return thread ID instead of process ID.
- */
-pid_t opal_shmem_getpid()
-{
-    pid_t id;
-    id = syscall(__NR_gettid);
-    return id;
-}
 
 /* ////////////////////////////////////////////////////////////////////////// */
 /**
@@ -237,7 +227,7 @@ get_uniq_file_name(const char *base_path, const char *hash_key)
         return NULL;
     }
 
-    my_pid = opal_shmem_getpid();
+    my_pid = opal_getpid();
     opal_srand(&rand_buff,((uint32_t)(time(NULL) + my_pid)));
     rand_num = opal_rand(&rand_buff) % 1024;
     str_hash = sdbm_hash((unsigned char *)hash_key);
@@ -256,7 +246,7 @@ segment_create(opal_shmem_ds_t *ds_buf,
 {
     int rc = OPAL_SUCCESS;
     char *real_file_name = NULL;
-    pid_t my_pid = opal_shmem_getpid();
+    pid_t my_pid = opal_getpid();
     /* the real size of the shared memory segment.  this includes enough space
      * to store our segment header.
      */
@@ -428,7 +418,7 @@ out:
 static void *
 segment_attach(opal_shmem_ds_t *ds_buf)
 {
-    pid_t my_pid = opal_shmem_getpid();
+    pid_t my_pid = opal_getpid();
 
     bool is_osv = opal_is_osv();
     if (my_pid != ds_buf->seg_cpid && 
@@ -513,7 +503,7 @@ segment_detach(opal_shmem_ds_t *ds_buf)
          ds_buf->seg_id, (unsigned long)ds_buf->seg_size, ds_buf->seg_name)
     );
 
-    pid_t my_pid = opal_shmem_getpid();
+    pid_t my_pid = opal_getpid();
     bool is_osv = opal_is_osv();
     if (is_osv == false || 
         my_pid == ds_buf->seg_cpid) {
