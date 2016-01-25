@@ -36,11 +36,5 @@ pid_t opal_getpid()
     return id;
 }
 
-long osv_waittid(long tid, int *status, int options) {
-    return syscall(__NR_osv_waittid, tid, status, options);
-}
 
-long osv_execve(const char *path, char *const argv[], char *const envp[], long *thread_id, int notification_fd) {
-    return syscall(__NR_osv_execve, path, argv, envp, thread_id, notification_fd);
-}
 

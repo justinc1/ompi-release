@@ -3,12 +3,10 @@
 
 #include "opal_config.h"
 
-/* Extra OSv specific syscalls */
-#define __NR_osv_execve  1000
-#define __NR_osv_waittid 1001
-long osv_waittid(long tid, int *status, int options);
+// Replacement for waitpid.
+long osv_waittid(long tid, int *status, int options) __attribute__((weak));
 // Replacement for fork+exec
-long osv_execve(const char *path, char *const argv[], char *const envp[], long *thread_id, int notification_fd);
+long osv_execve(const char *path, char *const argv[], char *const envp[], long *thread_id, int notification_fd) __attribute__((weak));
 
 BEGIN_C_DECLS
 

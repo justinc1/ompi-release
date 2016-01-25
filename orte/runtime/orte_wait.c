@@ -188,7 +188,7 @@ static opal_event_t handler;
 static void blk_waitpid_cb(pid_t wpid, int status, void *data);
 static pending_pids_item_t* find_pending_pid(pid_t pid, bool create);
 static registered_cb_item_t* find_waiting_cb(pid_t pid, bool create);
-/* static */ void do_waitall(int options);
+static void do_waitall(int options);
 static void trigger_callback(registered_cb_item_t *cb, 
                              pending_pids_item_t *pending);
 static int register_callback(pid_t pid, orte_wait_fn_t callback,
@@ -423,6 +423,14 @@ orte_wait_signal_callback(int fd, short event, void *arg)
     OPAL_THREAD_UNLOCK(&mutex);
 }
 
+/* Equivalent of orte_wait_signal_callback, for OSv */
+void
+orte_wait_signal_callback_osv()
+{
+    OPAL_THREAD_LOCK(&mutex);
+    do_waitall(0);
+    OPAL_THREAD_UNLOCK(&mutex);
+}
 
 int
 orte_wait_cb_disable()
@@ -530,7 +538,7 @@ find_waiting_cb(pid_t pid, bool create)
 }
 
 
-/* static */ void
+static void
 do_waitall(int options)
 {
     if (!cb_enabled) return;

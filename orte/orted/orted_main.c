@@ -932,7 +932,7 @@ int orte_daemon(int argc, char *argv[])
     exit(orte_exit_status);
 }
 
-void do_waitall(int options); /* internal static function in orte_wait.c */
+void orte_wait_signal_callback_osv();
 static void osv_child_terminated (int fd, short flags, void *arg)
 {
     opal_event_t *ev = (opal_event_t*)arg;
@@ -940,7 +940,7 @@ static void osv_child_terminated (int fd, short flags, void *arg)
     // free only if that would be the very lest child thread, just before orted termination.
     // opal_event_free(ev);
     //fprintf(stderr, "osv_child_terminated:%d called\n", __LINE__);
-    do_waitall(0);
+    orte_wait_signal_callback_osv();
 }
 
 static void pipe_closed(int fd, short flags, void *arg)
