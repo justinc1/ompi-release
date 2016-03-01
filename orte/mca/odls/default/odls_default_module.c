@@ -179,7 +179,7 @@ static int do_child(orte_app_context_t* context,
                     char **environ_copy,
                     orte_job_t *jobdat, int write_fd,
                     orte_iof_base_io_conf_t opts)
-    __opal_attribute_noreturn__;
+    ;// __opal_attribute_noreturn__;
 
 
 /*
@@ -758,7 +758,13 @@ static int do_child(orte_app_context_t* context,
                              orte_process_info.nodename, context->app, strerror(errno));
         /* Does not return */
     }
-    // Does return in OSv
+    /*
+    Does return in OSv.
+    If return is missing, code works with no optimization or with -O1.
+    With -O2 or -O3, it runs fine till end of this function, then it crashes, corrupts memory,
+    and/or cycles in a loop.
+    */
+    return 0;
 }
 
 
