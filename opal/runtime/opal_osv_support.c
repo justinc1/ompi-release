@@ -9,14 +9,13 @@
  * Return 1 if inside OSv, 0 otherwise.
  * */
 int opal_is_osv() {
-    static bool first_call=true, is_osv;
-    if(first_call) {
-        char *osv_ver;
-        osv_ver = getenv("OSV_VERSION");
-        is_osv = osv_ver != NULL;
-        first_call = false;
+    /* osv_execve is imported as weak symbol, it is NULL if not present */
+    if(osv_execve) {
+        return true;
     }
-    return is_osv;
+    else {
+        return false;
+    }
 }
 
 /**
