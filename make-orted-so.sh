@@ -12,11 +12,15 @@
 
 
 #cd build-osv/orte/tools/orted/
-pushd           orte/tools/orted/
+pushd           orte/tools/orted/ || exit 1
 
-rm orted orted.o orted.so .libs/orted .libs/orted.so
-make orted
-gcc -std=gnu99 -fPIC -DPIC -g -finline-functions -fno-strict-aliasing -pthread -o .libs/orted.so orted.o  ../../../orte/.libs/libopen-rte.so ../../../opal/.libs/libopen-pal.so -lrt -lm -lutil -pthread  -shared -fPIC
+# Capture and edit autotools compile/link cmd.
+# Then re-run with -shared flag.
+make clean
+OUT=`make V=1`
+CMD=`echo "$OUT" | grep '^libtool: link: ' | sed 's/^libtool: link: //'`
+CMD=`echo "$OUT" | grep '^libtool: link: ' | sed -e 's/^libtool: link: //' -e 's|-o .libs/orted|-o .libs/orted.so|' `
+$CMD -shared
 
 popd
 
