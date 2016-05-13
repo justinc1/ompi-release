@@ -36,6 +36,8 @@
 #include "ompi/mpi/c/profile/defines.h"
 #endif
 
+#include "opal/runtime/opal_osv_support.h"
+
 static const char FUNC_NAME[] = "MPI_Init";
 
 
@@ -45,6 +47,9 @@ int MPI_Init(int *argc, char ***argv)
     int provided;
     char *env;
     int required = MPI_THREAD_SINGLE;
+
+    /* Pin main thread on OSv. */
+    hack_osv_thread_pin();
 
     /* Ensure that we were not already initialized or finalized */
 
