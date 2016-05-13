@@ -186,7 +186,13 @@ sysv_runtime_query(mca_base_module_t **module, int *priority, const char *hint)
     if (-1 == shmctl(shmid, IPC_RMID, NULL)) {
         goto out;
     }
-    else if (-1 == shmctl(shmid, IPC_STAT, &tmp_buff)) {
+    else if ( (opal_is_osv() == 0) &&
+              (-1 == shmctl(shmid, IPC_STAT, &tmp_buff)) ) {
+        /*
+        shmctl with flage=IPC_STAT should work on Linux.
+        On OSv, IPC_STAT isn't implemented, so we don't check it -
+        it is not used in rest of the code anyway.
+         */
         goto out;
     }
     /* all is well - rainbows and butterflies */
