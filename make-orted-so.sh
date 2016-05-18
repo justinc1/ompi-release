@@ -10,18 +10,23 @@
 #/bin/bash ../../../libtool  --tag=CC   --mode=link gcc -std=gnu99  -fPIC -DPIC -g -finline-functions -fno-strict-aliasing -pthread   -o orted orted.o ../../../orte/libopen-rte.la ../../../opal/libopen-pal.la -lrt -lm -lutil  
 #libtool: link: gcc -std=gnu99 -fPIC -DPIC -g -finline-functions -fno-strict-aliasing -pthread -o .libs/orted orted.o  ../../../orte/.libs/libopen-rte.so ../../../opal/.libs/libopen-pal.so -lrt -lm -lutil -pthread
 
+function relink_bin_as_shared_object() {
+SUBDIR="$1"
+EXE_BIN="$2"
+SHARED_BIN="${EXE_BIN}.so"
 
-#cd build-osv/orte/tools/orted/
-pushd           orte/tools/orted/ || exit 1
+pushd $SUBDIR || exit 1
 
 # Capture and edit autotools compile/link cmd.
 # Then re-run with -shared flag.
 make clean
 OUT=`make V=1`
-CMD=`echo "$OUT" | grep '^libtool: link: ' | sed 's/^libtool: link: //'`
-CMD=`echo "$OUT" | grep '^libtool: link: ' | sed -e 's/^libtool: link: //' -e 's|-o .libs/orted|-o .libs/orted.so|' `
+CMD=`echo "$OUT" | grep '^libtool: link: ' | sed -e 's/^libtool: link: //' -e 's|-o '$EXE_BIN'|-o '$SHARED_BIN'|' `
 $CMD -shared
 
 popd
+ls -la $SUBDIR/$SHARED_BIN
+}
 
-ls -la orte/tools/orted/.libs/orted.so
+relink_bin_as_shared_object orte/tools/orted/ .libs/orted
+relink_bin_as_shared_object orte/tools/orterun/ .libs/orterun
