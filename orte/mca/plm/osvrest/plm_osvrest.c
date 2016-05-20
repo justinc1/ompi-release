@@ -45,24 +45,24 @@
 #include "orte/mca/plm/plm.h"
 #include "orte/mca/plm/base/base.h"
 #include "orte/mca/plm/base/plm_private.h"
-#include "orte/mca/plm/isolated/plm_isolated.h"
+#include "orte/mca/plm/osvrest/plm_osvrest.h"
 
-static int isolated_init(void);
-static int isolated_launch(orte_job_t *jdata);
+static int osvrest_init(void);
+static int osvrest_launch(orte_job_t *jdata);
 static int remote_spawn(opal_buffer_t *launch);
-static int isolated_terminate_orteds(void);
-static int isolated_finalize(void);
+static int osvrest_terminate_orteds(void);
+static int osvrest_finalize(void);
 
-orte_plm_base_module_t orte_plm_isolated_module = {
-    isolated_init,
+orte_plm_base_module_t orte_plm_osvrest_module = {
+    osvrest_init,
     orte_plm_base_set_hnp_name,
-    isolated_launch,
+    osvrest_launch,
     remote_spawn,
     orte_plm_base_orted_terminate_job,
-    isolated_terminate_orteds,
+    osvrest_terminate_orteds,
     orte_plm_base_orted_kill_local_procs,
     orte_plm_base_orted_signal_local_procs,
-    isolated_finalize
+    osvrest_finalize
 };
 
 static void launch_daemons(int fd, short args, void *cbdata);
@@ -70,7 +70,7 @@ static void launch_daemons(int fd, short args, void *cbdata);
 /**
  * Init the module
  */
-static int isolated_init(void)
+static int osvrest_init(void)
 {
     int rc;
     
@@ -98,7 +98,7 @@ static int remote_spawn(opal_buffer_t *launch)
     return ORTE_SUCCESS;
 }
 
-static int isolated_launch(orte_job_t *jdata)
+static int osvrest_launch(orte_job_t *jdata)
 {
     if (ORTE_JOB_CONTROL_RESTART & jdata->controls) {
         /* this is a restart situation - skip to the mapping stage */
@@ -121,7 +121,7 @@ static void launch_daemons(int fd, short args, void *cbdata)
     OBJ_RELEASE(state);
 }
 
-static int isolated_terminate_orteds(void)
+static int osvrest_terminate_orteds(void)
 {
     int rc;
 
@@ -132,7 +132,7 @@ static int isolated_terminate_orteds(void)
     return rc;
 }
 
-static int isolated_finalize(void)
+static int osvrest_finalize(void)
 {
     int rc;
     

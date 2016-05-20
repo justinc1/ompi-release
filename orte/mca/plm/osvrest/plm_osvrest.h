@@ -21,8 +21,8 @@
  * $HEADER$
  */
 
-#ifndef ORTE_PLM_ISOLATED_EXPORT_H
-#define ORTE_PLM_ISOLATED_EXPORT_H
+#ifndef ORTE_PLM_OSVREST_EXPORT_H
+#define ORTE_PLM_OSVREST_EXPORT_H
 
 #include "orte_config.h"
 
@@ -33,10 +33,10 @@
 BEGIN_C_DECLS
 
 
-ORTE_MODULE_DECLSPEC extern orte_plm_base_component_t mca_plm_isolated_component;
-extern orte_plm_base_module_t orte_plm_isolated_module;
+ORTE_MODULE_DECLSPEC extern orte_plm_base_component_t mca_plm_osvrest_component;
+extern orte_plm_base_module_t orte_plm_osvrest_module;
 
 
 END_C_DECLS
 
-#endif /* ORTE_PLS_ISOLATED_EXPORT_H */
+#endif /* ORTE_PLS_OSVREST_EXPORT_H */

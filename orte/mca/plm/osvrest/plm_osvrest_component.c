@@ -42,38 +42,38 @@
 #include "orte/runtime/orte_globals.h"
 
 #include "orte/mca/plm/plm.h"
-#include "orte/mca/plm/isolated/plm_isolated.h"
+#include "orte/mca/plm/osvrest/plm_osvrest.h"
 
 /*
- * Public string showing the plm ompi_isolated component version number
+ * Public string showing the plm ompi_osvrest component version number
  */
-const char *mca_plm_isolated_component_version_string =
-  "Open MPI isolated plm MCA component version " ORTE_VERSION;
+const char *mca_plm_osvrest_component_version_string =
+  "Open MPI osvrest (OSv REST) plm MCA component version " ORTE_VERSION;
 
 
-static int isolated_component_open(void);
-static int isolated_component_query(mca_base_module_t **module, int *priority);
-static int isolated_component_close(void);
+static int osvrest_component_open(void);
+static int osvrest_component_query(mca_base_module_t **module, int *priority);
+static int osvrest_component_close(void);
 
 /*
  * Instantiate the public struct with all of our public information
  * and pointers to our public functions in it
  */
 
-orte_plm_base_component_t mca_plm_isolated_component = {
+orte_plm_base_component_t mca_plm_osvrest_component = {
     {
         ORTE_PLM_BASE_VERSION_2_0_0,
 
         /* Component name and version */
-        "isolated",
+        "osvrest",
         ORTE_MAJOR_VERSION,
         ORTE_MINOR_VERSION,
         ORTE_RELEASE_VERSION,
 
         /* Component open and close functions */
-        isolated_component_open,
-        isolated_component_close,
-        isolated_component_query,
+        osvrest_component_open,
+        osvrest_component_close,
+        osvrest_component_query,
         NULL
     },
     {
@@ -82,18 +82,18 @@ orte_plm_base_component_t mca_plm_isolated_component = {
     }
 };
 
-static int isolated_component_open(void)
+static int osvrest_component_open(void)
 {
     return ORTE_SUCCESS;
 }
 
 
-static int isolated_component_query(mca_base_module_t **module, int *priority)
+static int osvrest_component_query(mca_base_module_t **module, int *priority)
 {
     /* make ourselves available at a very low priority */
     if (ORTE_PROC_IS_HNP) {
         *priority = 0;
-        *module = (mca_base_module_t *) &orte_plm_isolated_module;
+        *module = (mca_base_module_t *) &orte_plm_osvrest_module;
         return ORTE_SUCCESS;
     }
     *module = NULL;
@@ -101,7 +101,7 @@ static int isolated_component_query(mca_base_module_t **module, int *priority)
 }
 
 
-static int isolated_component_close(void)
+static int osvrest_component_close(void)
 {
     return ORTE_SUCCESS;
 }

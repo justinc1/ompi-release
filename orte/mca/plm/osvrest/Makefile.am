@@ -19,27 +19,27 @@
 #
 
 sources = \
-        plm_isolated.h \
-        plm_isolated_component.c \
-        plm_isolated.c
+        plm_osvrest.h \
+        plm_osvrest_component.c \
+        plm_osvrest.c
 
 # Make the output library in this directory, and name it either
 # mca_<type>_<name>.la (for DSO builds) or libmca_<type>_<name>.la
 # (for static builds).
 
-if MCA_BUILD_orte_plm_isolated_DSO
+if MCA_BUILD_orte_plm_osvrest_DSO
 component_noinst =
-component_install = mca_plm_isolated.la
+component_install = mca_plm_osvrest.la
 else
-component_noinst = libmca_plm_isolated.la
+component_noinst = libmca_plm_osvrest.la
 component_install =
 endif
 
 mcacomponentdir = $(ompilibdir)
 mcacomponent_LTLIBRARIES = $(component_install)
-mca_plm_isolated_la_SOURCES = $(sources)
-mca_plm_isolated_la_LDFLAGS = -module -avoid-version
+mca_plm_osvrest_la_SOURCES = $(sources)
+mca_plm_osvrest_la_LDFLAGS = -module -avoid-version
 
 noinst_LTLIBRARIES = $(component_noinst)
-libmca_plm_isolated_la_SOURCES =$(sources)
-libmca_plm_isolated_la_LDFLAGS = -module -avoid-version
+libmca_plm_osvrest_la_SOURCES =$(sources)
+libmca_plm_osvrest_la_LDFLAGS = -module -avoid-version

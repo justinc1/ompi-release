@@ -21,12 +21,13 @@
 # $HEADER$
 #
 
-# MCA_plm_isolated_CONFIG([action-if-found], [action-if-not-found])
+# MCA_plm_osvrest_CONFIG([action-if-found], [action-if-not-found])
 # -----------------------------------------------------------
-AC_DEFUN([MCA_orte_plm_isolated_CONFIG],[
-    AC_CONFIG_FILES([orte/mca/plm/isolated/Makefile])
+AC_DEFUN([MCA_orte_plm_osvrest_CONFIG],[
+    AC_CONFIG_FILES([orte/mca/plm/osvrest/Makefile])
 
-    AC_CHECK_FUNC([fork], [plm_isolated_happy="yes"], [plm_isolated_happy="no"])
+    # how to set plm_osvrest_happy without checking for something?
+    AC_CHECK_FUNC([fork], [plm_osvrest_happy="yes"], [plm_osvrest_happy="no"])
 
-    AS_IF([test "$plm_isolated_happy" = "yes"], [$1], [$2])
+    AS_IF([test "$plm_osvrest_happy" = "yes"], [$1], [$2])
 ])dnl
