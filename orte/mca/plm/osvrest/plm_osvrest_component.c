@@ -51,6 +51,7 @@ const char *mca_plm_osvrest_component_version_string =
   "Open MPI osvrest (OSv REST) plm MCA component version " ORTE_VERSION;
 
 
+static int osvrest_component_register(void);
 static int osvrest_component_open(void);
 static int osvrest_component_query(mca_base_module_t **module, int *priority);
 static int osvrest_component_close(void);
@@ -60,7 +61,8 @@ static int osvrest_component_close(void);
  * and pointers to our public functions in it
  */
 
-orte_plm_base_component_t mca_plm_osvrest_component = {
+orte_plm_osvrest_component_t mca_plm_osvrest_component = {
+    {
     {
         ORTE_PLM_BASE_VERSION_2_0_0,
 
@@ -74,13 +76,29 @@ orte_plm_base_component_t mca_plm_osvrest_component = {
         osvrest_component_open,
         osvrest_component_close,
         osvrest_component_query,
-        NULL
+        osvrest_component_register
     },
     {
         /* The component is checkpoint ready */
         MCA_BASE_METADATA_PARAM_CHECKPOINT
     }
+    }
 };
+
+static int osvrest_component_register(void)
+{
+    mca_base_component_t *c = &mca_plm_osvrest_component.super.base_version;
+
+    /* Default priority is lower that plm rsh */
+    mca_plm_osvrest_component.priority = 5;
+    (void) mca_base_component_var_register (c, "priority", "Priority of the osvrest plm component",
+                                            MCA_BASE_VAR_TYPE_INT, NULL, 0, 0,
+                                            OPAL_INFO_LVL_9,
+                                            MCA_BASE_VAR_SCOPE_READONLY,
+                                            &mca_plm_osvrest_component.priority);
+
+    return ORTE_SUCCESS;
+}
 
 static int osvrest_component_open(void)
 {
@@ -90,14 +108,10 @@ static int osvrest_component_open(void)
 
 static int osvrest_component_query(mca_base_module_t **module, int *priority)
 {
-    /* make ourselves available at a very low priority */
-    if (ORTE_PROC_IS_HNP) {
-        *priority = 0;
-        *module = (mca_base_module_t *) &orte_plm_osvrest_module;
-        return ORTE_SUCCESS;
-    }
-    *module = NULL;
-    return ORTE_ERROR;
+    /* we are good - make ourselves available */
+    *priority = mca_plm_osvrest_component.priority;
+    *module = (mca_base_module_t *) &orte_plm_osvrest_module;
+    return ORTE_SUCCESS;
 }
 
 

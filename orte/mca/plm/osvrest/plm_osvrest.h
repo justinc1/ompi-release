@@ -32,8 +32,13 @@
 
 BEGIN_C_DECLS
 
+struct orte_plm_osvrest_component_t {
+    orte_plm_base_component_t super;
+    int priority;
+};
+typedef struct orte_plm_osvrest_component_t orte_plm_osvrest_component_t;
 
-ORTE_MODULE_DECLSPEC extern orte_plm_base_component_t mca_plm_osvrest_component;
+ORTE_MODULE_DECLSPEC extern orte_plm_osvrest_component_t mca_plm_osvrest_component;
 extern orte_plm_base_module_t orte_plm_osvrest_module;
 
 
