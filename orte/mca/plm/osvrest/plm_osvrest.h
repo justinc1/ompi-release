@@ -35,6 +35,10 @@ BEGIN_C_DECLS
 struct orte_plm_osvrest_component_t {
     orte_plm_base_component_t super;
     int priority;
+    bool no_tree_spawn;
+    int num_concurrent;
+    char *agent;
+    bool pass_environ_mca_params;
 };
 typedef struct orte_plm_osvrest_component_t orte_plm_osvrest_component_t;
 
