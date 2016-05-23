@@ -21,7 +21,7 @@
 sources = \
         plm_osvrest.h \
         plm_osvrest_component.c \
-        plm_osvrest.c
+        plm_osvrest_module.c
 
 # Make the output library in this directory, and name it either
 # mca_<type>_<name>.la (for DSO builds) or libmca_<type>_<name>.la
