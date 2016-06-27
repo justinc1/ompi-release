@@ -968,10 +968,8 @@ static int launch_agent_setup(const char *agent, char *path)
                          (NULL == agent) ? mca_plm_osvrest_component.agent : agent,
                          (NULL == path) ? "NULL" : path));
     // osvrest_agent_argv = orte_plm_osvrest_search(agent, path) ;
-    if(osvrest_agent_argv) {
-        free(osvrest_agent_argv);
-    }
-    osvrest_agent_argv = malloc(2);
+    assert(osvrest_agent_argv==NULL);
+    osvrest_agent_argv = malloc(2*sizeof(char*));
     osvrest_agent_argv[0] = strdup(agent);  /* As we use abs path, no PATH env var is needed */
     osvrest_agent_argv[1] = NULL;
 
