@@ -343,6 +343,23 @@ static int write_help_msg(int fd, pipe_err_msg_t *msg, const char *file,
     }
     msg->msg_str_len = (int) strlen(str);
 
+    /*
+    OSv - pipes are not implemented, so child cannot send msg to parent.
+    We can at least show message at local VM console via stderr.
+    TODO Maybe a socket or tmp file could be used?
+    */
+    if (opal_is_osv()) {
+        if (msg->fatal) {
+            fprintf(stderr, "ERROR\n");
+        }
+        else {
+            fprintf(stderr, "WARNING\n");
+        }
+        fprintf(stderr, "  File: %s\n", file);
+        fprintf(stderr, "  Topic: %s\n", topic);
+        fprintf(stderr, "%s\n", str);
+    }
+
     /* Only keep writing if each write() succeeds */
     if (OPAL_SUCCESS != (ret = opal_fd_write(fd, sizeof(*msg), msg))) {
         goto out;
