@@ -36,6 +36,7 @@
 #define migratepages migrate_pages /* workaround broken migratepages prototype in numaif.h before libnuma 2.0.2 */
 #include <numaif.h>
 #endif
+#include "opal/runtime/opal_osv_support.h"
 
 struct hwloc_linux_backend_data_s {
   int root_fd; /* The file descriptor for the file system root, used when browsing, e.g., Linux' sysfs and procfs. */
@@ -582,6 +583,19 @@ hwloc_linux_foreach_proc_tid(hwloc_topology_t topology,
   unsigned retrynr = 0;
   int err;
 
+  if (opal_is_osv()) {
+    /*
+    Pretend we have only one thread. We actualy have two (mpi-program has
+    main computational loop and libevent loop), but how to get all threads
+    started in same ELF namespaces?
+
+    There are also warnings about stubbed sched_getaffinity, sched_setaffinity.
+    */
+    nr = 1;
+    tids = malloc(nr*sizeof(pid_t));
+    tids[0] = opal_getpid(); // this returns thread ID on OSv
+    taskdir = NULL;
+  } else {
   if (pid)
     snprintf(taskdir_path, sizeof(taskdir_path), "/proc/%u/task", (unsigned) pid);
   else
@@ -599,6 +613,7 @@ hwloc_linux_foreach_proc_tid(hwloc_topology_t topology,
   err = hwloc_linux_get_proc_tids(taskdir, &nr, &tids);
   if (err < 0)
     goto out_with_dir;
+  }
 
  retry:
   /* apply the callback to all threads */
@@ -612,9 +627,16 @@ hwloc_linux_foreach_proc_tid(hwloc_topology_t topology,
   }
 
   /* re-read the list of thread */
+  if (opal_is_osv()) {
+    newnr = nr;
+    newtids = malloc(newnr*sizeof(pid_t));
+    memcpy(newtids, tids, newnr*sizeof(pid_t));
+  }
+  else {
   err = hwloc_linux_get_proc_tids(taskdir, &newnr, &newtids);
   if (err < 0)
     goto out_with_tids;
+  }
   /* retry if the list changed in the meantime, or we failed for *some* threads only.
    * if we're really unlucky, all threads changed but we got the same set of tids. no way to support this.
    */
@@ -644,7 +666,9 @@ hwloc_linux_foreach_proc_tid(hwloc_topology_t topology,
  out_with_tids:
   free(tids);
  out_with_dir:
-  closedir(taskdir);
+  if (taskdir) {
+    closedir(taskdir);
+  }
  out:
   return err;
 }
