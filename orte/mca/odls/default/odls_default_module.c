@@ -505,12 +505,15 @@ static int do_child(orte_app_context_t* context,
         }
 
 #if OPAL_HAVE_HWLOC
-        if (0 != do_child_hwloc(context,
-                    child,
-                    environ_copy,
-                    jobdat, write_fd,
-                    opts)) {
-            goto PROCEED;
+        if(!opal_is_osv()) {
+            // Linux, do it now
+            if (0 != do_child_hwloc(context,
+                        child,
+                        environ_copy,
+                        jobdat, write_fd,
+                        opts)) {
+                goto PROCEED;
+            }
         }
 #endif
 
@@ -603,6 +606,7 @@ static int do_child(orte_app_context_t* context,
     if(opal_is_osv()) {
         int ret;
         long thread_id = 0;
+        volatile long wait_cnt=0, wait_cnt_max=1000;
         ret  = osv_execve(context->app, context->argv, environ_copy, &thread_id, osv_child_done_fd);
         fprintf(stderr, "TTRT odls_default_module.c:%d osv_execve ret=%d, thread_id=%ld, child=%p fd=%d \n", __LINE__, ret, thread_id, child, osv_child_done_fd);
         if(ret != 0) {
@@ -610,8 +614,38 @@ static int do_child(orte_app_context_t* context,
                                  "help-orte-odls-default.txt", "execve error",
                                  orte_process_info.nodename, context->app, strerror(errno));
         }
+        else {
+            /*
+            The first (utility) thread is already running - that is the thread which later waits on app.join().
+            But the filrst thread maybe didn't yet manage to start new app main() funcion (in yet another thread),
+            and the thread_id might not be set yet.
+            So let just wait on thread_id to become non-zero.
+            TODO - this should be done nicer. Maybe the osv_execve should do the waiting part.
+            */
+            while (thread_id == 0 && wait_cnt < wait_cnt_max) {
+                usleep(10*1000);
+                wait_cnt++;
+            }
+            if (thread_id == 0) {
+                OPAL_OUTPUT_VERBOSE((0, orte_odls_base_framework.framework_output,
+                                     "%s odls:default:osv_execve didn't set thread id. Sorry...",
+                                     ORTE_NAME_PRINT(ORTE_PROC_MY_NAME) ));
+            }
+        }
         if (NULL != child) {
             child->pid = (int)thread_id;
+#if OPAL_HAVE_HWLOC
+            // OSv, do it later than on Linux
+            if (0 != do_child_hwloc(context,
+                        child,
+                        environ_copy,
+                        jobdat, write_fd,
+                        opts)) {
+                // continue - just as in Linux
+                // goto PROCEED;
+
+            }
+#endif
         }
         close(write_fd);
         // Does return in OSv
@@ -690,7 +724,12 @@ static int do_child_hwloc(orte_app_context_t* context,
                         }
                         sum = (opal_hwloc_topo_data_t*)root->userdata;
                         /* bind this proc to all available processors */
-                        hwloc_set_cpubind(opal_hwloc_topology, sum->available, 0);
+                        if(opal_is_osv()) {
+                            hwloc_set_proc_cpubind(opal_hwloc_topology, child->pid, sum->available, 0);
+                        }
+                        else {
+                            hwloc_set_cpubind(opal_hwloc_topology, sum->available, 0);
+                        }
                     }
                     /* provide a nice string representation of what we bound to */
                     (void) mca_base_var_env_name ("orte_base_applied_binding", &param);
@@ -727,7 +766,12 @@ static int do_child_hwloc(orte_app_context_t* context,
                     }
                 }
                 /* bind as specified */
-                rc = hwloc_set_cpubind(opal_hwloc_topology, cpuset, 0);
+                if(opal_is_osv()) {
+                    rc = hwloc_set_proc_cpubind(opal_hwloc_topology, child->pid, cpuset, 0);
+                }
+                else {
+                    rc = hwloc_set_cpubind(opal_hwloc_topology, cpuset, 0);
+                }
                 /* if we got an error and this wasn't a default binding policy, then report it */
                 if (rc < 0  && OPAL_BINDING_POLICY_IS_SET(jobdat->map->binding)) {
                     if (errno == ENOSYS) {
