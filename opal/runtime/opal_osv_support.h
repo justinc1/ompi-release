@@ -15,8 +15,6 @@ long osv_waittid(long tid, int *status, int options) __attribute__((weak));
 // Replacement for fork+exec
 long osv_execve(const char *path, char *const argv[], char *const envp[], long *thread_id, int notification_fd) __attribute__((weak));
 
-void hack_osv_thread_pin();
-
 BEGIN_C_DECLS
 
 OPAL_DECLSPEC int opal_is_osv();

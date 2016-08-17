@@ -48,19 +48,6 @@ static void opal_thread_construct(opal_thread_t *t)
  * POSIX threads
  ************************************************************************/
 
-#include "opal/runtime/opal_osv_support.h"
-/*
- * Util function to pin to CPU a newly spawned pthread on OSv.
- * Actually, there is only one such thread - libevent worker thread.
- */
-void* opal_thread_start_wrapper(void *t2) {
-    // Now we are executing in new thread, and can pin using pthread_self.
-    opal_thread_t *t = (opal_thread_t *) t2;
-    fprintf(stderr, "TTRT opal_thread_start_warp... t2->run=%p self=%d\n", t->t_run, pthread_self());
-    hack_osv_thread_pin();
-    return t->t_run(t);
-}
-
 int opal_thread_start(opal_thread_t *t)
 {
     int rc;
@@ -71,7 +58,7 @@ int opal_thread_start(opal_thread_t *t)
         }
     }
 
-    rc = pthread_create(&t->t_handle, NULL, opal_thread_start_wrapper, t);
+    rc = pthread_create(&t->t_handle, NULL, (void*(*)(void*)) t->t_run, t);
 
     return (rc == 0) ? OPAL_SUCCESS : OPAL_ERROR;
 }
