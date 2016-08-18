@@ -802,9 +802,19 @@ static int do_child_hwloc(orte_app_context_t* context,
                     hwloc_cpuset_t mycpus;
                     /* get the cpus we are bound to */
                     mycpus = hwloc_bitmap_alloc();
-                    if (hwloc_get_cpubind(opal_hwloc_topology, 
+                    if(opal_is_osv()) {
+                        rc = hwloc_get_proc_cpubind(opal_hwloc_topology, 
+                                          child->pid, 
+                                          mycpus,
+                                          HWLOC_CPUBIND_PROCESS);
+                    }
+                    else {
+                        rc = hwloc_get_cpubind(opal_hwloc_topology, 
                                           mycpus, 
-                                          HWLOC_CPUBIND_PROCESS) < 0) {
+                                          HWLOC_CPUBIND_PROCESS);
+                    }
+
+                    if (rc < 0) {
                         opal_output(0, "MCW rank %d is not bound",
                                     child->name.vpid);
                     } else {

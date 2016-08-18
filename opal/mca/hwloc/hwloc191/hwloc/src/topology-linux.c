@@ -582,19 +582,18 @@ hwloc_linux_foreach_proc_tid(hwloc_topology_t topology,
   unsigned i, nr, newnr, failed = 0, failed_errno = 0;
   unsigned retrynr = 0;
   int err;
+  size_t nr_size;
 
   if (opal_is_osv()) {
-    /*
-    Pretend we have only one thread. We actualy have two (mpi-program has
-    main computational loop and libevent loop), but how to get all threads
-    started in same ELF namespaces?
-
-    There are also warnings about stubbed sched_getaffinity, sched_setaffinity.
-    */
-    nr = 1;
-    tids = malloc(nr*sizeof(pid_t));
-    tids[0] = opal_getpid(); // this returns thread ID on OSv
     taskdir = NULL;
+    nr = 0;
+    assert(sizeof(pid_t) == sizeof(unsigned int));
+    err = osv_get_all_app_threads(pid, &tids, &nr_size);
+    if(err) {
+      goto out_with_dir;
+    }
+    nr = nr_size;
+    fprintf(stderr, "hwloc_linux_foreach_proc_tid topology-linux.c:%d OSv pid=%d nr=%d\n", __LINE__, pid, nr);
   } else {
   if (pid)
     snprintf(taskdir_path, sizeof(taskdir_path), "/proc/%u/task", (unsigned) pid);
@@ -628,9 +627,13 @@ hwloc_linux_foreach_proc_tid(hwloc_topology_t topology,
 
   /* re-read the list of thread */
   if (opal_is_osv()) {
-    newnr = nr;
-    newtids = malloc(newnr*sizeof(pid_t));
-    memcpy(newtids, tids, newnr*sizeof(pid_t));
+    newnr = 0;
+    assert(sizeof(pid_t) == sizeof(unsigned int));
+    err = osv_get_all_app_threads(pid, &newtids, &nr_size);
+    if(err) {
+      goto out_with_dir;
+    }
+    newnr = nr_size;
   }
   else {
   err = hwloc_linux_get_proc_tids(taskdir, &newnr, &newtids);
@@ -786,7 +789,11 @@ hwloc_linux_set_thisthread_cpubind(hwloc_topology_t topology, hwloc_const_bitmap
     errno = ENOSYS;
     return -1;
   }
-  return hwloc_linux_set_tid_cpubind(topology, 0, hwloc_set);
+  pid_t tid = 0;
+  if(opal_is_osv()) {
+    tid = opal_getpid();
+  }
+  return hwloc_linux_set_tid_cpubind(topology, tid, hwloc_set);
 }
 
 static int
@@ -796,7 +803,11 @@ hwloc_linux_get_thisthread_cpubind(hwloc_topology_t topology, hwloc_bitmap_t hwl
     errno = ENOSYS;
     return -1;
   }
-  return hwloc_linux_get_tid_cpubind(topology, 0, hwloc_set);
+  pid_t tid = 0;
+  if(opal_is_osv()) {
+    tid = opal_getpid();
+  }
+  return hwloc_linux_get_tid_cpubind(topology, tid, hwloc_set);
 }
 
 #if HAVE_DECL_PTHREAD_SETAFFINITY_NP
