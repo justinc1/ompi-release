@@ -110,7 +110,7 @@ static void pipe_closed(int fd, short flags, void *arg);
 
 static opal_event_t *osv_child_handler;
 static void osv_child_terminated (int fd, short flags, void *arg);
-int osv_child_done_fd;
+int osv_child_done_fd = -2;
 
 static char *orte_parent_uri;
 
@@ -236,6 +236,26 @@ opal_cmd_line_init_t orte_cmd_line_opts[] = {
     { NULL, '\0', NULL, NULL, 0,
       NULL, OPAL_CMD_LINE_TYPE_NULL, NULL }
 };
+
+/*
+Setup notification mechanism to get notified about therminated child threads.
+E.g. about new apps started via osv_execve().
+*/
+void orte_osv_setup_child_thread_handler()
+{
+    /* OSv notification about thread termination */
+    if(osv_child_done_fd < 0) {
+        osv_child_done_fd = eventfd(0, 0); // EFD_NONBLOCK
+        fprintf(stderr, "orted_main.c:%d osv_child_done_fd=%d\n", __LINE__, osv_child_done_fd);
+    }
+    osv_child_handler = (opal_event_t*)malloc(sizeof(opal_event_t));
+    opal_event_set(orte_event_base, osv_child_handler,
+                   osv_child_done_fd,
+                   EV_READ | EV_PERSIST,
+                   osv_child_terminated,
+                   osv_child_handler);
+    opal_event_add(osv_child_handler, NULL);
+}
 
 int orte_daemon(int argc, char *argv[])
 {
@@ -891,17 +911,7 @@ int orte_daemon(int argc, char *argv[])
     ret = ORTE_SUCCESS;
 
     /* OSv notification about thread termination */
-    if(osv_child_done_fd == -1) {
-        osv_child_done_fd = eventfd(0, 0); // EFD_NONBLOCK
-        fprintf(stderr, "orted_main.c:%d osv_child_done_fd=%d\n", __LINE__, osv_child_done_fd);
-    }
-    osv_child_handler = (opal_event_t*)malloc(sizeof(opal_event_t));
-    opal_event_set(orte_event_base, osv_child_handler,
-                   osv_child_done_fd,
-                   EV_READ | EV_PERSIST,
-                   osv_child_terminated,
-                   osv_child_handler);
-    opal_event_add(osv_child_handler, NULL);
+    orte_osv_setup_child_thread_handler();
 
     /* loop the event lib until an exit event is detected */
     while (orte_event_base_active) {
