@@ -1128,6 +1128,13 @@ int orterun(int argc, char *argv[])
     /* spawn the job and its daemons */
     rc = orte_plm.spawn(jdata);
 
+    /*
+    OSv notification about thread termination.
+    This one is required for mpi_apps started directly by mpirun/orterun on the localhost VM;
+    that is, without help of orted - orted is used for remote machines only.
+    */
+    orte_osv_setup_child_thread_handler();
+
     /* loop the event lib until an exit event is detected */
     while (orte_event_base_active) {
         opal_event_loop(orte_event_base, OPAL_EVLOOP_ONCE);
