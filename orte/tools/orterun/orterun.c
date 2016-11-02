@@ -1160,7 +1160,7 @@ int orterun(int argc, char *argv[])
     if (orte_debug_flag) {
         fprintf(stderr, "exiting with status %d\n", orte_exit_status);
     }
-    exit(orte_exit_status);
+    return orte_exit_status;
 }
 
 static int init_globals(void)
