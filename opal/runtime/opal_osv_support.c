@@ -258,12 +258,14 @@ static int http_read(http_client_t httpc, char* buf, size_t sz) {
 
 /*
 Start program on remote OSv VM.
+Return 0 on success, negative number on error.
 
 It does:
 POST /env/PATH?val=%2Fusr%2Fbin%3A%2Fusr%2Flib
 PUT /app/?command=...
 */
-void opal_osvrest_run(char *host, int port, char **argv) {
+int opal_osvrest_run(char *host, int port, char **argv) {
+    int ret = -1;
     /*
     Setup env PATH. It should not be empty, or even /usr/lib/orted.so (with abs path)
     will not be "found" on PATH;
@@ -305,6 +307,7 @@ void opal_osvrest_run(char *host, int port, char **argv) {
     }
     http_put(httpc, var2);
     http_read(httpc, buf, sizeof(buf));
+    ret = 0;
 
 DONE:
     http_close(&httpc);
@@ -317,4 +320,5 @@ DONE:
     if(var2) {
         free(var2);
     }
+    return ret;
 }

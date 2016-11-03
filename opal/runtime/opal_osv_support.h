@@ -21,7 +21,7 @@ BEGIN_C_DECLS
 
 OPAL_DECLSPEC int opal_is_osv();
 OPAL_DECLSPEC pid_t opal_getpid();
-OPAL_DECLSPEC void opal_osvrest_run(char *host, int port, char **argv);
+OPAL_DECLSPEC int opal_osvrest_run(char *host, int port, char **argv);
 
 END_C_DECLS
 

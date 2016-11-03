@@ -116,7 +116,7 @@ OBJ_CLASS_INSTANCE(orte_plm_osvrest_caddy_t,
 static int launch_agent_setup(const char *agent, char *path);
 static void launch_daemons(int fd, short args, void *cbdata);
 static void process_launch_list(int fd, short args, void *cbdata);
-static void osvrest_child(int argc, char **argv);
+static int osvrest_child(int argc, char **argv);
 
 /* local global storage */
 static char **osvrest_agent_argv=NULL;
@@ -179,7 +179,7 @@ static void osvrest_wait_daemon(pid_t pid, int status, void* cbdata) /* OSv chec
         return;
     }
 
-    if (! WIFEXITED(status) || ! WEXITSTATUS(status) == 0) { /* if abnormal exit */
+    if (! WIFEXITED(status) || ! WEXITSTATUS(status) == 0 || status == -1) { /* if abnormal exit */
         /* if we are not the HNP, send a message to the HNP alerting it
          * to the failure
          */
@@ -579,6 +579,7 @@ static void process_launch_list(int fd, short args, void *cbdata)
     opal_list_item_t *item;
     pid_t pid;
     orte_plm_osvrest_caddy_t *caddy;
+    int ret;
     
     while (num_in_progress < mca_plm_osvrest_component.num_concurrent) {
         item = opal_list_remove_first(&launch_list);
@@ -588,24 +589,33 @@ static void process_launch_list(int fd, short args, void *cbdata)
         }
         caddy = (orte_plm_osvrest_caddy_t*)item;
         
-        /* do the launch via REST - this will exit if it fails */
-        osvrest_child(caddy->argc, caddy->argv);
+        /* do the launch via REST - this will return negative value if it fails */
+        ret = osvrest_child(caddy->argc, caddy->argv);
+        /* indicate if this daemon has been launched */
+        caddy->daemon->state = ret == 0? ORTE_PROC_STATE_RUNNING: ORTE_PROC_STATE_FAILED_TO_START;
 
-        /* indicate this daemon has been launched */
-        caddy->daemon->state = ORTE_PROC_STATE_RUNNING;
         /* record the pid of the ssh fork */
         /*
         For OSv, separate thread should be started, and thread ID should be saved.
         For now, just set it to -1 to prevent using waitpid.
+
+        But http client doesn't run in separate thread.
+        So there is no TID to wait on to finish. We can just directly call
+        osvrest_wait_daemon with status set to error, so that failure is reported back to mpirun.
         */
         pid = -1;
         caddy->daemon->pid = pid;
         
         OPAL_OUTPUT_VERBOSE((1, orte_plm_base_framework.framework_output,
-                             "%s plm:osvrest: recording launch of daemon %s",
+                             "%s plm:osvrest: recording launch of daemon %s (osvrest_child ret=%d)",
                              ORTE_NAME_PRINT(ORTE_PROC_MY_NAME),
-                             ORTE_NAME_PRINT(&(caddy->daemon->name))));
+                             ORTE_NAME_PRINT(&(caddy->daemon->name)),
+                             ret));
 
+        /* on failure, force reporting failure back to master (master == HNP?) */
+        if (ret < 0) {
+            osvrest_wait_daemon(caddy->daemon->pid, -1, (void*)caddy);
+        }
         /* setup callback on sigchild - wait until setup above is complete
          * as the callback can occur in the call to orte_wait_cb
          */
@@ -977,8 +987,9 @@ static int launch_agent_setup(const char *agent, char *path)
     return ORTE_SUCCESS;
 }
 
-static void osvrest_child(int argc, char **argv) {
+static int osvrest_child(int argc, char **argv) {
     char* var;
+    int ret;
     
     var = opal_argv_join(argv, ' ');
     OPAL_OUTPUT_VERBOSE((10, orte_plm_base_framework.framework_output,
@@ -995,6 +1006,7 @@ static void osvrest_child(int argc, char **argv) {
     int port = 8000;
     char *host = argv[1];
     argv[1] = argv[0];  // drop IP from argv
-    opal_osvrest_run(host, port, argv+1);
+    ret = opal_osvrest_run(host, port, argv+1);
     argv[1] = host;
+    return ret;
 }
