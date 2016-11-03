@@ -225,8 +225,12 @@ static int http_send(http_client_t httpc, char* method, char* buf) {
         return -1;
     }
 
-    fprintf(stderr, "HTTP put %s\n", buf2);
+    fprintf(stderr, "HTTP send %s\n", buf2);
     return tcp_write(httpc.sockfd, buf2, strlen(buf2));
+}
+
+static int http_get(http_client_t httpc, char* buf) {
+    return http_send(httpc, "GET", buf);
 }
 
 static int http_put(http_client_t httpc, char* buf) {
@@ -293,6 +297,21 @@ int opal_osvrest_run(char *host, int port, char **argv) {
 
     http_client_t httpc;
     char buf[1024];
+
+    /* Make sure OSv VM is fully up. Retry up to 3 times. */
+    int max_connect_retries = 3;
+    while (max_connect_retries-- > 0) {
+        httpc = http_connect(host, port);
+        if (httpc.sockfd < 0) {
+            sleep(1);
+            continue;
+        }
+        http_get(httpc, "/os/version");
+        http_read(httpc, buf, sizeof(buf));
+        http_close(&httpc);
+        break;
+    }
+
     httpc = http_connect(host, port);
     if (httpc.sockfd < 0) {
         goto DONE;
