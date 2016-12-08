@@ -211,8 +211,19 @@ static int tcp_read(int sockfd, char* buf, size_t sz) {
 
 static int http_read(http_client_t httpc, char* buf, size_t sz) {
     int ret;
+    /*
+    HACK != FIX
+    Prevent occassional/frequent hang. When client, say orted connects to other OSv VM,
+    it might hang while reading from TCP socket. Looking at tcpdump,
+    all is ok - valid response data was sent, fin and fin-ack were sent, but read(sockfd) hangs.
+    We should look closer at this, and try to repeat on a simpler test case -
+    it could be OSv problem.
+    For now, we just forget to read data - it was ignored anyway.
+    */
+#if 0
     ret = tcp_read(httpc.sockfd, buf, sz);
     fprintf(stderr, "HTTP received %s\n", buf);
+#endif
     // TODO check buf
     return 200;
 }
