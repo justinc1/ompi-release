@@ -606,7 +606,6 @@ static int do_child(orte_app_context_t* context,
     if(opal_is_osv()) {
         int ret;
         long thread_id = 0;
-        volatile long wait_cnt=0, wait_cnt_max=1000;
         ret  = osv_execve(context->app, context->argv, environ_copy, &thread_id, osv_child_done_fd);
         fprintf(stderr, "TTRT odls_default_module.c:%d osv_execve ret=%d, thread_id=%ld, child=%p fd=%d \n", __LINE__, ret, thread_id, child, osv_child_done_fd);
         if(ret != 0) {
@@ -615,22 +614,7 @@ static int do_child(orte_app_context_t* context,
                                  orte_process_info.nodename, context->app, strerror(errno));
         }
         else {
-            /*
-            The first (utility) thread is already running - that is the thread which later waits on app.join().
-            But the filrst thread maybe didn't yet manage to start new app main() funcion (in yet another thread),
-            and the thread_id might not be set yet.
-            So let just wait on thread_id to become non-zero.
-            TODO - this should be done nicer. Maybe the osv_execve should do the waiting part.
-            */
-            while (thread_id == 0 && wait_cnt < wait_cnt_max) {
-                usleep(10*1000);
-                wait_cnt++;
-            }
-            if (thread_id == 0) {
-                OPAL_OUTPUT_VERBOSE((0, orte_odls_base_framework.framework_output,
-                                     "%s odls:default:osv_execve didn't set thread id. Sorry...",
-                                     ORTE_NAME_PRINT(ORTE_PROC_MY_NAME) ));
-            }
+            assert(thread_id != 0);
         }
         if (NULL != child) {
             child->pid = (int)thread_id;
