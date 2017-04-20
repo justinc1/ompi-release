@@ -23,6 +23,7 @@
 #include <string.h>
 #include <locale.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "opal/mca/installdirs/installdirs.h"
 #include "opal/util/show_help.h"
@@ -60,6 +61,9 @@ int opal_show_help_init(void)
     
     OBJ_CONSTRUCT(&lds, opal_output_stream_t);
     lds.lds_want_stderr = true;
+    char hostname[32] = "NA";
+    gethostname(hostname, sizeof(hostname));
+    asprintf(&lds.lds_prefix, "[%s:%05d] ", hostname, opal_getpid());
     output_stream = opal_output_open(&lds);
     
     opal_argv_append_nosize(&search_dirs, opal_install_dirs.ompidatadir);

@@ -424,7 +424,7 @@ int opal_hwloc_base_report_bind_failure(const char *file,
         gethostname(hostname, sizeof(hostname));
 
         opal_show_help("help-opal-hwloc-base.txt", "mbind failure", true,
-                       hostname, getpid(), file, line, msg,
+                       hostname, opal_getpid(), file, line, msg,
                        (OPAL_HWLOC_BASE_MBFA_WARN == opal_hwloc_base_mbfa) ?
                        "Warning -- your job will continue, but possibly with degraded performance" :
                        "ERROR -- your job may abort or behave erraticly");

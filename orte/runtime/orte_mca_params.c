@@ -71,6 +71,9 @@ int orte_register_params(void)
      */
     OBJ_CONSTRUCT(&lds, opal_output_stream_t);
     lds.lds_want_stdout = true;
+    char hostname[32] = "NA";
+    gethostname(hostname, 32);
+    asprintf(&lds.lds_prefix, "[%s:%05d] : ", hostname, opal_getpid());
     orte_clean_output = opal_output_open(&lds);
     OBJ_DESTRUCT(&lds);
     

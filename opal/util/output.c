@@ -197,6 +197,9 @@ bool opal_output_init(void)
         info[i].ldi_file_want_append = false;
         info[i].ldi_fd = -1;
         info[i].ldi_file_num_lines_lost = 0;
+
+        asprintf(&info[i].ldi_prefix, "[%s:%05d--default] ", hostname, opal_getpid()); /**/
+        info[i].ldi_prefix_len = strlen(info[i].ldi_prefix);
     }
 
     /* Initialize the mutex that protects the output */
@@ -646,6 +649,9 @@ static int do_open(int output_id, opal_output_stream_t * lds)
     info[i].ldi_syslog = false;
 #endif
 
+#if 0
+    assert(lds->lds_prefix && 0 != strcmp(lds->lds_prefix, "[osv:00000] "));
+#endif
     if (NULL != lds->lds_prefix) {
         info[i].ldi_prefix = strdup(lds->lds_prefix);
         info[i].ldi_prefix_len = (int)strlen(lds->lds_prefix);
@@ -815,6 +821,9 @@ static int make_string(char **no_newline_string, output_desc_t *ldi,
     }
     if (NULL != ldi->ldi_prefix) {
         total_len += strlen(ldi->ldi_prefix);
+#if 0
+        assert(0 != strcmp(ldi->ldi_prefix, "[osv:00000] "));
+#endif
     }
     if (NULL != ldi->ldi_suffix) {
         total_len += strlen(ldi->ldi_suffix);

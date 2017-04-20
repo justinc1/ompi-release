@@ -43,7 +43,7 @@ int pml_v_output_open(char *output, int verbosity) {
         }
         lds.lds_is_debugging = true;
         gethostname(hostname, 32);
-        asprintf(&lds.lds_prefix, "[%s:%05d] pml_v: ", hostname, getpid());
+        asprintf(&lds.lds_prefix, "[%s:%05d] pml_v: ", hostname, opal_getpid());
         lds.lds_verbose_level = verbosity;
         mca_pml_v.output = opal_output_open(&lds);
         free(lds.lds_prefix);
