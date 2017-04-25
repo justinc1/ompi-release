@@ -65,6 +65,18 @@ static event_fatal_cb fatal_fn = NULL;
 
 /****    OMPI CHANGE    ****/
 int event_enable_debug_output = 0;
+
+pid_t gettid(void)  __attribute__ ((weak));
+static pid_t gettid_safe() {
+	if (gettid) {
+		// we are on OSv
+		return gettid();
+	}
+	else {
+		// should be linux
+		return getpid();
+	}
+}
 /****  END OMPI CHANGE  ****/
 
 void
@@ -223,6 +235,6 @@ event_log(int severity, const char *msg)
 			severity_str = "???";
 			break;
 		}
-		(void)fprintf(stderr, "[%s] %s\n", severity_str, msg);
+		(void)fprintf(stderr, "[%s tid=%05d] %s\n", severity_str, gettid_safe(), msg);
 	}
 }

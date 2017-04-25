@@ -38,6 +38,7 @@ extern "C" {
 #endif
 
 /****    OMPI CHANGE    ****/
+//#define USE_DEBUG
 #include "opal_rename.h"
 /****  END OMPI CHANGE  ****/
 
