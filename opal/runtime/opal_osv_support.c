@@ -256,7 +256,7 @@ int opal_osvrest_run(char *host, int port, char **argv) {
     fprintf(stderr, "HTTP run var     %s\n", var);
     fprintf(stderr, "HTTP run var_enc %s\n", var_enc);
     /* build full URL */
-    size_t var2_maxlen = strlen(var) + 100;
+    size_t var2_maxlen = strlen(var_enc) + 100;
     char *var2 = malloc(var2_maxlen);
     if (var2==NULL) {
         goto DONE;
