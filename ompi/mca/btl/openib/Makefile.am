@@ -63,6 +63,8 @@ sources = \
     connect/btl_openib_connect_base.c \
     connect/btl_openib_connect_empty.c \
     connect/btl_openib_connect_empty.h \
+    connect/btl_openib_connect_oob.c \
+    connect/btl_openib_connect_oob.h \
     connect/connect.h
 
 # If we have failover support, build that file
