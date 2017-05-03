@@ -18,6 +18,7 @@
 #include "btl_openib_proc.h"
 #include "connect/base.h"
 #include "connect/btl_openib_connect_empty.h"
+#include "connect/btl_openib_connect_oob.h"
 #if OMPI_HAVE_RDMACM && OPAL_HAVE_THREADS
 #include "connect/btl_openib_connect_rdmacm.h"
 #endif
@@ -35,7 +36,7 @@
 static ompi_btl_openib_connect_base_component_t *all[] = {
     /* Always have an entry here so that the CP indexes will always be
        the same: OOB has been removed, so use the "empty" CPC */
-    &ompi_btl_openib_connect_empty,
+    &ompi_btl_openib_connect_oob,
 
     /* Always have an entry here so that the CP indexes will always be
        the same: XOOB has been removed, so use the "empty" CPC */
