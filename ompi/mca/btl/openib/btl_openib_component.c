@@ -1575,6 +1575,8 @@ static int init_one_device(opal_list_t *btl_list, struct ibv_device* ib_dev)
         return OMPI_ERR_NOT_SUPPORTED;
     }
 
+    // vRDMA: relasing the cq and qp here will cause problem.
+#if 0
     /* Find out if this device supports RC QPs */
     if (OMPI_SUCCESS != ompi_common_verbs_qp_test(dev_context, 
                                                   OMPI_COMMON_VERBS_FLAGS_RC)) {
@@ -1584,6 +1586,7 @@ static int init_one_device(opal_list_t *btl_list, struct ibv_device* ib_dev)
         ++num_devices_intentionally_ignored;
         return OMPI_ERR_NOT_SUPPORTED;
     }
+#endif
 
     device = OBJ_NEW(mca_btl_openib_device_t);
     if(NULL == device){
