@@ -47,7 +47,7 @@ const char *ibv_get_sysfs_path(void);
 
 bool ompi_common_verbs_check_basics(void)
 {
-#if defined(__linux__)
+#if 0
     int rc;
     char *file;
     struct stat s;
